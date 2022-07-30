@@ -5,7 +5,8 @@ import {
     UserOutlined,
     PieChartOutlined,
     DesktopOutlined,
-    FileOutlined
+    FileOutlined,
+    BellOutlined
 } from '@ant-design/icons';
 
 import '../App.scss'
@@ -59,21 +60,33 @@ const HomeLayout = ({ children }) => {
                 }}
             >
                 <div className="logo" />
-                <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline" items={items}/>
+                <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline" items={items} />
             </Sider>
             <Layout className="site-layout">
                 <Header
                     className="site-layout-background"
                     style={{
                         padding: 0,
-                        position:'fixed',
-                        width:'100vw'
+                        // position: 'fixed',
+                        // width: '100vw'
                     }}
                 >
-                    {createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
-                        className: 'trigger',
-                        onClick: () => setCollapsed(!collapsed),
-                    })}
+                    <div className="site-layout-header">
+                        {createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
+                            className: 'trigger',
+                            style: { marginLeft: 24 },
+                            onClick: () => setCollapsed(!collapsed),
+                        })}
+
+                        <div>
+                            <BellOutlined className="trigger" style={{ marginRight: 26 }} />
+                            <>
+                                <UserOutlined className="trigger" style={{ marginRight: 10 }}/>
+                                <span><b>Gononet ERP</b></span>
+                            </>
+
+                        </div>
+                    </div>
                 </Header>
                 <Content className="site-layout-background site-layout-content">
                     {children}

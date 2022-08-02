@@ -4,7 +4,8 @@ import {
     Routes,
     Route
 } from 'react-router-dom';
-import 'antd/dist/antd.min.css';
+// import 'antd/dist/antd.min.css';
+import './theme.css';
 import './App.scss';
 
 import { ContactLists } from './pages';

@@ -1,4 +1,4 @@
-import ContactLists from "./contacts/contactLists";
+import ContactLists from "./contacts/contact-list/contactLists";
 
 export {
     ContactLists

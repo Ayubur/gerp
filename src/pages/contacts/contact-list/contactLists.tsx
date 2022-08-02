@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button, Table, Dropdown, Menu, Space, Row, Col, Divider, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import "./contactList.css";
-import { AddRoundFillIcon, RightArrowIcon } from "../../assets/icon";
+import { AddRoundFillIcon, RightArrowIcon } from "../../../assets/icon";
 
 interface DataType {
     key: React.Key;

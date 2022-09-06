@@ -1,135 +1,141 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import BootstrapTable from 'react-bootstrap-table-next';
 import paginationFactory, { PaginationListStandalone, PaginationProvider } from 'react-bootstrap-table2-paginator';
 import { Link } from 'react-router-dom';
-import { Col, Container, FormGroup, Row } from 'reactstrap';
+import { Col, Container, FormGroup, Label, Modal, ModalBody, ModalHeader, Row } from 'reactstrap';
 import ToolkitProvider, {
     Search,
 } from "react-bootstrap-table2-toolkit/dist/react-bootstrap-table2-toolkit";
+import { getAllContactGroup, getAllContactType } from 'services/contact';
 
 const ContactSubGroupLists = () => {
 
-    const [users, setUsers] = useState([
-        {
-            id: 1, name: 'arif', age: 21, designation: 'Developer',
-        },
-        {
-            id: 2, name: 'mohan', age: 22, designation: 'Tester'
-        },
-        {
-            id: 3, name: 'saiful', age: 21, designation: 'Developer',
-        },
-        {
-            id: 4, name: 'jahangir', age: 22, designation: 'Tester'
-        },
-        {
-            id: 5, name: 'titu', age: 21, designation: 'Developer',
-        },
-        {
-            id: 6, name: 'raihan', age: 22, designation: 'Tester'
-        },
-        {
-            id: 7, name: 'khalil', age: 21, designation: 'Developer',
-        },
-        {
-            id: 8, name: 'milon', age: 22, designation: 'Tester'
-        }
-
-    ]);
-    const [user, setUser] = useState("");
+    const [contactGroup, setContactGroup] = useState([]);
+    const [contactTypeList, setContactTypeList] = useState([]);
+    const [contactSubGroup, setContactSubGroup] = useState(null);
     const [isEdit, setIsEdit] = useState(false);
-    const node = React.createRef();
-
-    const pageOptions = {
-        sizePerPage: 5,
-        totalSize: users.length, // replace later with size(users),
-        custom: true,
-    };
-
-    const handleUserClick = (arg) => {
-        const user = arg;
-
-        setUser({
-            id: user.id,
-            name: user.name,
-            designation: user.designation,
-            age: user.age
-        })
-
-        setIsEdit(true)
-
-        alert('EDIT user: ' + user.name + '!!!!!!!!!!!!')
-    };
-
-    const onClickDelete = (user) => {
-        alert('DELETE user: ' + user.name + '!!!!!!!!!!!!')
-    }
-
-    const onPaginationPageChange = page => {
-        if (
-            node &&
-            node.current &&
-            node.current.props &&
-            node.current.props.pagination &&
-            node.current.props.pagination.options
-        ) {
-            node.current.props.pagination.options.onPageChange(page);
-        }
-    };
-
-    const contactListColumns = [
+    const [loading, setLoading] = useState(true);
+    const [contactGroupModal, setContactGroupModal] = useState(false);
+    const [columnList, setColumnList] = useState([
         {
             text: "id",
-            dataField: "id",
-            sort: true,
-            hidden: true,
-            formatter: (cellContent, user) => <>{user.id}</>,
+            dataField: "contact_group_id",
+            hidden: true
         },
         {
-            text: "Name",
-            dataField: "name",
+            text: "Sub Group Name",
+            dataField: "contact_group_name",
             sort: true,
-            formatter: (cellContent, user) => (
+            formatter: (cellContent, contactSubGroup) => (
                 <>
                     <h5 className="font-size-14 mb-1">
-                        <Link to="#" className="text-dark">
-                            {user.name}
-                        </Link>
+                        {contactSubGroup.contact_group_name}
                     </h5>
-                    <p className="text-muted mb-0">{user.designation}</p>
                 </>
             ),
         },
         {
-            dataField: "age",
-            text: "Age",
-            sort: true,
+            text: "Contact Type",
+            dataField: "contact_type_name",
+            sort: false,
+            formatter: (cellContent, contactSubGroup) => (
+                <>
+                    <h5 className="font-size-14 mb-1">
+                        {contactSubGroup.contact_type_name}
+                    </h5>
+                </>
+            ),
         },
         {
             dataField: "menu",
             isDummyField: true,
             editable: false,
             text: "Action",
-            formatter: (cellContent, user) => (
+            formatter: (cellContent, contactSubGroup) => (
                 <div className="d-flex gap-3">
                     <Link className="text-success" to="#">
                         <i
                             className="mdi mdi-pencil font-size-18"
                             id="edittooltip"
-                            onClick={() => handleUserClick(user)}
+                            onClick={() => handleUserClick(contactSubGroup)}
                         ></i>
                     </Link>
                     <Link className="text-danger" to="#">
                         <i
                             className="mdi mdi-delete font-size-18"
                             id="deletetooltip"
-                            onClick={() => onClickDelete(user)}
+                            onClick={() => onClickDelete(contactSubGroup)}
                         ></i>
                     </Link>
                 </div>
             ),
-        },
-    ]
+        }
+    ]);
+    const node = React.createRef();
+
+    useEffect(() => {
+        _initFunc();
+    }, [])
+
+
+    const _initFunc = async () => {
+        setLoading(true);
+        let promise_arr = [];
+        let contactTypeData = [];
+        let contactGroupData = [];
+
+
+        let contactTypes = await getAllContactType();
+        promise_arr?.push({ key: 'contactType', data: contactTypes })
+
+        let contactGroups = await getAllContactGroup();
+        promise_arr?.push({ key: 'contactGroup', data: contactGroups })
+
+        Promise.all(promise_arr).then(res => {
+            res?.map(el => {
+                if (el?.key == 'contactType') {
+                    contactTypeData = el?.data;
+                    setContactTypeList(contactTypeData);
+                } else {
+                    contactGroupData = el?.data;
+                    contactGroupData = contactGroupData?.map(el => ({
+                        ...el,
+                        contact_type_name: contactTypeData?.filter(e => e?.contact_type_id == el?.contact_type_id)[0]?.contact_type_name
+                    }))
+                    setContactGroup(contactGroupData);
+                }
+                setLoading(false);
+            })
+        })
+    }
+
+    const pageOptions = {
+        sizePerPage: 10,
+        totalSize: contactGroup?.length, // replace later with size(contactGroup),
+        custom: true,
+    };
+
+    const handleUserClick = (arg) => {
+        setContactSubGroup(arg)
+        setIsEdit(true);
+        setContactGroupModal(true);
+    };
+
+    const onClickDelete = (contactSubGroup) => {
+        alert('DELETE contactSubGroup: ' + contactSubGroup.name + '!!!!!!!!!!!!')
+    }
+
+    // const onPaginationPageChange = page => {
+    //     if (
+    //         node &&
+    //         node.current &&
+    //         node.current.props &&
+    //         node.current.props.pagination &&
+    //         node.current.props.pagination.options
+    //     ) {
+    //         node.current.props.pagination.options.onPageChange(page);
+    //     }
+    // };
 
     const selectRow = {
         mode: "checkbox",
@@ -141,6 +147,10 @@ const ContactSubGroupLists = () => {
             order: "desc", // desc or asc
         },
     ];
+
+    const toggle = () => {
+        setContactGroupModal(!contactGroupModal);
+    }
 
     return (
         <>
@@ -160,6 +170,11 @@ const ContactSubGroupLists = () => {
                                 <button
                                     type="button"
                                     className="btn btn-primary"
+                                    onClick={() => {
+                                        setIsEdit(false);
+                                        setContactSubGroup(null)
+                                        setContactGroupModal(true);
+                                    }}
                                 >
                                     <i className="bx bx-plus font-size-16 align-middle me-2"></i>
                                     Create
@@ -169,265 +184,106 @@ const ContactSubGroupLists = () => {
 
                     </Row>
                     <Row>
-                        <PaginationProvider
-                            pagination={paginationFactory(pageOptions)}
-                            keyField="id"
-                            columns={contactListColumns}
-                            data={users}
-                        >
-                            {({ paginationProps, paginationTableProps }) => (
-                                <ToolkitProvider
-                                    keyField="id"
-                                    columns={contactListColumns}
-                                    data={users}
-                                    search
+                        {
+                            !loading && (
+                                <PaginationProvider
+                                    pagination={paginationFactory(pageOptions)}
+                                    keyField="contact_group_id"
+                                    columns={columnList}
+                                    data={contactGroup}
                                 >
-                                    {toolkitprops => (
-                                        <React.Fragment>
-                                            <Row>
-                                                <Col xl="12">
-                                                    <div className="table-responsive">
-                                                        <BootstrapTable
-                                                            {...toolkitprops.baseProps}
-                                                            {...paginationTableProps}
-                                                            selectRow={selectRow}
-                                                            defaultSorted={defaultSorted}
-                                                            classes={
-                                                                "table align-middle table-nowrap table-hover"
-                                                            }
-                                                            bordered={false}
-                                                            striped={false}
-                                                            responsive
-                                                            ref={node}
-                                                        />
+                                    {({ paginationProps, paginationTableProps }) => (
+                                        <ToolkitProvider
+                                            keyField="contact_group_id"
+                                            columns={columnList}
+                                            data={contactGroup}
+                                            search
+                                        >
+                                            {toolkitprops => (
+                                                <React.Fragment>
+                                                    <Row>
+                                                        <Col xl="12">
+                                                            <div className="table-responsive">
+                                                                <BootstrapTable
+                                                                    {...toolkitprops.baseProps}
+                                                                    {...paginationTableProps}
+                                                                    selectRow={selectRow}
+                                                                    defaultSorted={defaultSorted}
+                                                                    classes={
+                                                                        "table align-middle table-nowrap table-hover"
+                                                                    }
+                                                                    bordered={false}
+                                                                    striped={false}
+                                                                    responsive
+                                                                    ref={node}
+                                                                />
 
-                                                        {/* <Modal
-                                                            isOpen={this.state.modal}
-                                                            className={this.props.className}
-                                                        >
-                                                            <ModalHeader
-                                                                toggle={this.toggle}
-                                                                tag="h4"
-                                                            >
-                                                                {!!isEdit ? "Edit User" : "Add User"}
-                                                            </ModalHeader>
-                                                            <ModalBody>
-                                                                <Formik
-                                                                    enableReinitialize={true}
-                                                                    initialValues={{
-                                                                        name: (user && user.name) || "",
-                                                                        designation:
-                                                                            (user && user.designation) || "",
-                                                                        email: (user && user.email) || "",
-                                                                        tags: (user && user.tags) || [],
-                                                                        projects:
-                                                                            (user && user.projects) || "",
-                                                                    }}
-                                                                    validationSchema={Yup.object().shape({
-                                                                        name: Yup.string().required(
-                                                                            "Please Enter Your Name"
-                                                                        ),
-                                                                        designation: Yup.string().required(
-                                                                            "Please Enter Your Designation"
-                                                                        ),
-                                                                        email: Yup.string().required(
-                                                                            "Please Enter Your Email"
-                                                                        ),
-                                                                        tags: Yup.array().required(
-                                                                            "Please Select Tags"
-                                                                        ),
-                                                                        projects: Yup.string().required(
-                                                                            "Please Enter Your Projects"
-                                                                        ),
-                                                                    })}
-                                                                    onSubmit={values => {
-                                                                        if (isEdit) {
-                                                                            const updateUser = {
-                                                                                id: user.id,
-                                                                                name: values.name,
-                                                                                designation: values.designation,
-                                                                                tags: values.tags,
-                                                                                email: values.email,
-                                                                                projects: values.projects,
-                                                                            };
-
-                                                                            // update user
-                                                                            onUpdateUser(updateUser);
-                                                                        } else {
-                                                                            const newUser = {
-                                                                                id:
-                                                                                    Math.floor(
-                                                                                        Math.random() * (30 - 20)
-                                                                                    ) + 20,
-                                                                                name: values["name"],
-                                                                                designation:
-                                                                                    values["designation"],
-                                                                                email: values["email"],
-                                                                                tags: values["tags"],
-                                                                                projects: values["projects"],
-                                                                            };
-                                                                            // save new user
-                                                                            onAddNewUser(newUser);
-                                                                        }
-                                                                        this.setState({
-                                                                            selectedUser: null,
-                                                                        });
-                                                                        this.toggle();
-                                                                    }}
+                                                                <Modal
+                                                                    isOpen={contactGroupModal}
+                                                                // className={this.props.className}
                                                                 >
-                                                                    {({ errors, status, touched }) => (
-                                                                        <Form>
-                                                                            <Row>
-                                                                                <Col className="col-12">
-                                                                                    <div className="mb-3">
-                                                                                        <Label className="form-label">
-                                                                                            Name
-                                                                                        </Label>
-                                                                                        <Field
-                                                                                            name="name"
-                                                                                            type="text"
-                                                                                            className={
-                                                                                                "form-control" +
-                                                                                                (errors.name &&
-                                                                                                    touched.name
-                                                                                                    ? " is-invalid"
-                                                                                                    : "")
-                                                                                            }
-                                                                                        />
-                                                                                        <ErrorMessage
-                                                                                            name="name"
-                                                                                            component="div"
-                                                                                            className="invalid-feedback"
-                                                                                        />
-                                                                                    </div>
-                                                                                    <div className="mb-3">
-                                                                                        <Label className="form-label">
-                                                                                            Designation
-                                                                                        </Label>
-                                                                                        <Field
-                                                                                            name="designation"
-                                                                                            type="text"
-                                                                                            className={
-                                                                                                "form-control" +
-                                                                                                (errors.designation &&
-                                                                                                    touched.designation
-                                                                                                    ? " is-invalid"
-                                                                                                    : "")
-                                                                                            }
-                                                                                        />
-                                                                                        <ErrorMessage
-                                                                                            name="designation"
-                                                                                            component="div"
-                                                                                            className="invalid-feedback"
-                                                                                        />
-                                                                                    </div>
-                                                                                    <div className="mb-3">
-                                                                                        <Label className="form-label">
-                                                                                            Email
-                                                                                        </Label>
-                                                                                        <Field
-                                                                                            name="email"
-                                                                                            type="text"
-                                                                                            className={
-                                                                                                "form-control" +
-                                                                                                (errors.email &&
-                                                                                                    touched.email
-                                                                                                    ? " is-invalid"
-                                                                                                    : "")
-                                                                                            }
-                                                                                        />
-                                                                                        <ErrorMessage
-                                                                                            name="email"
-                                                                                            component="div"
-                                                                                            className="invalid-feedback"
-                                                                                        />
-                                                                                    </div>
-                                                                                    <div className="mb-3">
-                                                                                        <Label className="form-label">
-                                                                                            Tags
-                                                                                        </Label>
-                                                                                        <Field
-                                                                                            name="tags"
-                                                                                            as="select"
-                                                                                            className={
-                                                                                                "form-control" +
-                                                                                                (errors.tags &&
-                                                                                                    touched.tags
-                                                                                                    ? " is-invalid"
-                                                                                                    : "")
-                                                                                            }
-                                                                                            multiple={true}
-                                                                                        >
-                                                                                            <option>Photoshop</option>
-                                                                                            <option>
-                                                                                                illustrator
-                                                                                            </option>
-                                                                                            <option>Html</option>
-                                                                                            <option>Php</option>
-                                                                                            <option>Java</option>
-                                                                                            <option>Python</option>
-                                                                                            <option>
-                                                                                                UI/UX Designer
-                                                                                            </option>
-                                                                                            <option>Ruby</option>
-                                                                                            <option>Css</option>
-                                                                                        </Field>
-                                                                                    </div>
-                                                                                    <div className="mb-3">
-                                                                                        <Label className="form-label">
-                                                                                            Projects
-                                                                                        </Label>
-                                                                                        <Field
-                                                                                            name="projects"
-                                                                                            type="text"
-                                                                                            className={
-                                                                                                "form-control" +
-                                                                                                (errors.projects &&
-                                                                                                    touched.projects
-                                                                                                    ? " is-invalid"
-                                                                                                    : "")
-                                                                                            }
-                                                                                        />
-                                                                                        <ErrorMessage
-                                                                                            name="projects"
-                                                                                            component="div"
-                                                                                            className="invalid-feedback"
-                                                                                        />
-                                                                                    </div>
-                                                                                </Col>
-                                                                            </Row>
-                                                                            <Row>
-                                                                                <Col>
-                                                                                    <div className="text-end">
-                                                                                        <button
-                                                                                            type="submit"
-                                                                                            className="btn btn-success save-user"
-                                                                                        >
-                                                                                            Save
-                                                                                        </button>
-                                                                                    </div>
-                                                                                </Col>
-                                                                            </Row>
-                                                                        </Form>
-                                                                    )}
-                                                                </Formik>
-                                                            </ModalBody>
-                                                        </Modal> */}
-                                                    </div>
-                                                </Col>
-                                            </Row>
-                                            <Row className="align-items-md-center mt-30">
-                                                <Col className="pagination pagination-rounded justify-content-end mb-2">
-                                                    <PaginationListStandalone
-                                                        {...paginationProps}
-                                                    />
-                                                </Col>
-                                            </Row>
-                                        </React.Fragment>
+                                                                    <ModalHeader
+                                                                        toggle={toggle}
+                                                                        tag="h4"
+                                                                    >
+                                                                        {!!isEdit ? "Edit Contact Sub Group" : "Add Contact Sub Group"}
+                                                                    </ModalHeader>
+                                                                    <ModalBody>
+                                                                        <FormGroup>
+                                                                            <Label className="form-label">Contact Type</Label>
+                                                                            <select className="form-select" placeholder='Select One'>
+                                                                                {
+                                                                                    !isEdit && (
+                                                                                        <option value={0}>Select</option>
+                                                                                    )
+                                                                                }
+                                                                                {contactTypeList.map(el => (
+                                                                                    !isEdit ? (
+                                                                                        <option value={el?.contact_type_id} key={el?.contact_type_id}>{el?.contact_type_name}</option>
+
+                                                                                    ) : (
+                                                                                        <option value={el?.contact_type_id} key={el?.contact_type_id} selected={el?.contact_type_id == contactSubGroup?.contact_type_id}>{el?.contact_type_name}</option>
+
+                                                                                    )
+                                                                                ))}
+                                                                            </select>
+                                                                        </FormGroup>
+                                                                        <FormGroup>
+                                                                            <Label className="form-label">Contact Sub Group Name</Label>
+                                                                            <input type={'text'} className="form-control" placeholder='Enter sub group name'
+                                                                                value={contactSubGroup?.contact_group_name}
+                                                                                onChange={e => setContactSubGroup(prev => ({ ...prev, contact_group_name: e.target.value }))}
+                                                                            />
+                                                                        </FormGroup>
+                                                                        <div style={{ textAlign: 'right' }}>
+                                                                            <button
+                                                                                type="button"
+                                                                                className="btn btn-primary"
+                                                                                onClick={() => setContactGroupModal(false)}
+                                                                            >
+                                                                                Save
+                                                                            </button>
+                                                                        </div>
+
+                                                                    </ModalBody>
+                                                                </Modal>
+                                                            </div>
+                                                        </Col>
+                                                    </Row>
+                                                    <Row className="align-items-md-center mt-30">
+                                                        <Col className="pagination pagination-rounded justify-content-end mb-2">
+                                                            <PaginationListStandalone
+                                                                {...paginationProps}
+                                                            />
+                                                        </Col>
+                                                    </Row>
+                                                </React.Fragment>
+                                            )}
+                                        </ToolkitProvider>
                                     )}
-                                </ToolkitProvider>
-                            )}
-                        </PaginationProvider>
+                                </PaginationProvider>
+                            )
+                        }
                     </Row>
                 </Col>
             </Row>

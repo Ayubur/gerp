@@ -10,10 +10,10 @@ import { Link } from "react-router-dom";
 import { withTranslation } from "react-i18next";
 import SidebarContent from "./SidebarContent";
 
-import logo from "../../assets/images/logo.svg";
-import logoLightPng from "../../assets/images/logo-light.png";
-import logoLightSvg from "../../assets/images/logo-light.svg";
-import logoDark from "../../assets/images/logo-dark.png";
+import logo from "../../assets/images/logo.png";
+import logoLightPng from "../../assets/images/logo.png";
+import logoLightSvg from "../../assets/images/logo.png";
+import logoDark from "../../assets/images/logo.png";
 
 class Sidebar extends Component {
   constructor(props) {

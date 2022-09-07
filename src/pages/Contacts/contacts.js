@@ -48,6 +48,7 @@ import {
 
 import { isEmpty, size, map } from "lodash";
 import ContactSubGroupLists from "components/Contacts/contact-sub-group/ContactSubGroupLists";
+import ContactLists from "components/Contacts/contact-sub-group/ContactLists";
 
 const Contacts = () => {
     const [customActiveTab, setCustomActiveTab] = useState(1);
@@ -87,7 +88,9 @@ const Contacts = () => {
                                     {
                                         customActiveTab == 1 ? (
                                             <ContactSubGroupLists />
-                                        ) : <></>
+                                        ) : (
+                                            <ContactLists />
+                                        )
                                     }
                                 </div>
                             </CardBody>

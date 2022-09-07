@@ -6,13 +6,19 @@ import { Col, Container, FormGroup, Label, Modal, ModalBody, ModalHeader, Row } 
 import ToolkitProvider, {
     Search,
 } from "react-bootstrap-table2-toolkit/dist/react-bootstrap-table2-toolkit";
-import { getAllContactGroup, getAllContactType } from 'services/contact';
+import { getAllContactGroup, getAllContactType, saveContactGroupData, updateContactGroupData } from 'services/contact';
 
 const ContactSubGroupLists = () => {
 
     const [contactGroup, setContactGroup] = useState([]);
     const [contactTypeList, setContactTypeList] = useState([]);
-    const [contactSubGroup, setContactSubGroup] = useState(null);
+    const [contactSubGroup, setContactSubGroup] = useState({
+        contact_group_id: null,
+        contact_group_name: '',
+        contact_type_name: '',
+        contact_type_id: null,
+        is_active: true
+    });
     const [isEdit, setIsEdit] = useState(false);
     const [loading, setLoading] = useState(true);
     const [contactGroupModal, setContactGroupModal] = useState(false);
@@ -109,6 +115,37 @@ const ContactSubGroupLists = () => {
         })
     }
 
+    const createContactGroup = async () => {
+        delete contactSubGroup.contact_group_id;
+        delete contactSubGroup.contact_type_name;
+        try {
+            const saveContactGroupResponse = await saveContactGroupData(contactSubGroup);
+            if (saveContactGroupResponse?.success) {
+                _initFunc();
+                setContactGroupModal(false)
+            } else {
+                alert('Error occurs while saving contact group!')
+            }
+        } catch (error) {
+            console.log('saveContactGroupResponseError', error);
+        }
+    }
+
+    const updateContactGroup = async () => {
+        delete contactSubGroup.contact_type_name;
+        try {
+            const updateContactGroupResponse = await updateContactGroupData(contactSubGroup.contact_group_id, contactSubGroup);
+            if (updateContactGroupResponse?.success) {
+                _initFunc();
+                setContactGroupModal(false)
+            } else {
+                alert('Error occurs while updating contact group!')
+            }
+        } catch (error) {
+            console.log('saveContactGroupResponseError', error);
+        }
+    }
+
     const pageOptions = {
         sizePerPage: 10,
         totalSize: contactGroup?.length, // replace later with size(contactGroup),
@@ -172,7 +209,13 @@ const ContactSubGroupLists = () => {
                                     className="btn btn-primary"
                                     onClick={() => {
                                         setIsEdit(false);
-                                        setContactSubGroup(null)
+                                        setContactSubGroup({
+                                            contact_group_id: null,
+                                            contact_group_name: '',
+                                            contact_type_name: '',
+                                            contact_type_id: null,
+                                            is_active: true
+                                        })
                                         setContactGroupModal(true);
                                     }}
                                 >
@@ -231,7 +274,8 @@ const ContactSubGroupLists = () => {
                                                                     <ModalBody>
                                                                         <FormGroup>
                                                                             <Label className="form-label">Contact Type</Label>
-                                                                            <select className="form-select" placeholder='Select One'>
+                                                                            <select defaultValue={!isEdit ? 0 : contactSubGroup.contact_type_id} className="form-select" placeholder='Select One'
+                                                                                onChange={e => setContactSubGroup(prev => ({ ...prev, contact_type_id: Number(e.target.value) }))}>
                                                                                 {
                                                                                     !isEdit && (
                                                                                         <option value={0}>Select</option>
@@ -251,7 +295,7 @@ const ContactSubGroupLists = () => {
                                                                         <FormGroup>
                                                                             <Label className="form-label">Contact Sub Group Name</Label>
                                                                             <input type={'text'} className="form-control" placeholder='Enter sub group name'
-                                                                                value={contactSubGroup?.contact_group_name}
+                                                                                value={contactSubGroup.contact_group_name}
                                                                                 onChange={e => setContactSubGroup(prev => ({ ...prev, contact_group_name: e.target.value }))}
                                                                             />
                                                                         </FormGroup>
@@ -259,9 +303,9 @@ const ContactSubGroupLists = () => {
                                                                             <button
                                                                                 type="button"
                                                                                 className="btn btn-primary"
-                                                                                onClick={() => setContactGroupModal(false)}
+                                                                                onClick={() => !isEdit ? createContactGroup() : updateContactGroup()}
                                                                             >
-                                                                                Save
+                                                                                {!isEdit ? 'Save' : "Update"}
                                                                             </button>
                                                                         </div>
 

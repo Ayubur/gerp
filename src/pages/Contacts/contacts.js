@@ -54,7 +54,7 @@ const Contacts = () => {
     return (
         <>
             <div className="page-content">
-                <Breadcrumbs title="Contacts" breadcrumbItem="Contacts" />
+                {/* <Breadcrumbs title="Contacts" breadcrumbItem="Contacts" /> */}
                 <Row>
                     <Col lg="12">
                         <Card>

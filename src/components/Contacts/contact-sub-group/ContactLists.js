@@ -6,51 +6,86 @@ import { Col, Container, FormGroup, Label, Modal, ModalBody, ModalHeader, Row } 
 import ToolkitProvider, {
     Search,
 } from "react-bootstrap-table2-toolkit/dist/react-bootstrap-table2-toolkit";
-import { getAllContactGroup, getAllContactType, saveContactGroupData, updateContactGroupData } from 'services/contact';
+import Select from "react-select";
+import { getContactGroup, getContactType, getLocationGroup } from 'services/dropdown';
+import { getContact } from 'services/contact';
 
 const ContactLists = () => {
 
     const [contactGroup, setContactGroup] = useState([]);
     const [contactTypeList, setContactTypeList] = useState([]);
-    const [contactSubGroup, setContactSubGroup] = useState({
-        contact_group_id: null,
-        contact_group_name: '',
-        contact_type_name: '',
+    const [contactTypeDropdownList, setContactTypeDropdownList] = useState([]);
+    const [locationGroupList, setLocationGroupList] = useState([]);
+    const [locationGroupDropdownList, setLocationGroupDropdownList] = useState([]);
+    const [contactSubGroupList, setContactSubGroupList] = useState([]);
+    const [contactSubGroupDropdownList, setContactSubGroupDropdownList] = useState([]);
+    const [contacts, setContacts] = useState([]);
+    const [totalPage, setTotalPage] = useState(0);
+
+
+    const [contactFilterData, setContactFilterData] = useState({
+        location_group_id: null,
         contact_type_id: null,
-        is_active: true
+        contact_group_id: null
     });
     const [isEdit, setIsEdit] = useState(false);
     const [loading, setLoading] = useState(true);
     const [contactGroupModal, setContactGroupModal] = useState(false);
     const [columnList, setColumnList] = useState([
         {
-            text: "id",
-            dataField: "contact_group_id",
+            text: "Id",
+            dataField: "contact_id",
             hidden: true
         },
         {
-            text: "Sub Group Name",
-            dataField: "contact_group_name",
-            sort: true,
-            formatter: (cellContent, contactSubGroup) => (
-                <>
-                    <h5 className="font-size-14 mb-1">
-                        {contactSubGroup.contact_group_name}
-                    </h5>
-                </>
-            ),
+            text: "Location Group",
+            dataField: "location_group",
+            sort: false
         },
         {
             text: "Contact Type",
-            dataField: "contact_type_name",
-            sort: false,
-            formatter: (cellContent, contactSubGroup) => (
-                <>
-                    <h5 className="font-size-14 mb-1">
-                        {contactSubGroup.contact_type_name}
-                    </h5>
-                </>
-            ),
+            dataField: "contact_type",
+            sort: false
+        },
+        {
+            text: "Sub Group",
+            dataField: "contact_group_name",
+            sort: false
+        },
+        {
+            text: "Business Name",
+            dataField: "business_name",
+            sort: false
+        },
+        {
+            text: "Job Title",
+            dataField: "job_title",
+            sort: false
+        },
+        {
+            text: "Name",
+            dataField: "first_name",
+            sort: false
+        },
+        {
+            text: "Address",
+            dataField: "address",
+            sort: false
+        },
+        {
+            text: "Mobile",
+            dataField: "mobile",
+            sort: false
+        },
+        {
+            text: "Email",
+            dataField: "email",
+            sort: false
+        },
+        {
+            text: "Description",
+            dataField: "description",
+            sort: false
         },
         {
             dataField: "menu",
@@ -89,31 +124,71 @@ const ContactLists = () => {
         let promise_arr = [];
         let contactTypeData = [];
         let contactGroupData = [];
+        let locationGroupData = [];
+        let contactData = [];
 
+        let locationGroups = await getLocationGroup();
+        promise_arr?.push({ key: 'locationGroup', data: locationGroups })
 
-        let contactTypes = await getAllContactType();
+        let contactTypes = await getContactType();
         promise_arr?.push({ key: 'contactType', data: contactTypes })
 
-        let contactGroups = await getAllContactGroup();
+        let contactGroups = await getContactGroup();
         promise_arr?.push({ key: 'contactGroup', data: contactGroups })
+
+        let contacts = await getContact(1);
+        promise_arr?.push({ key: 'contact', data: contacts })
 
         Promise.all(promise_arr).then(res => {
             res?.map(el => {
                 if (el?.key == 'contactType') {
                     contactTypeData = el?.data;
-                    setContactTypeList(contactTypeData);
-                } else {
+                    let data = [];
+
+                    contactTypeData.map(e => {
+                        data?.push({
+                            label: e?.contact_type_name,
+                            value: e?.contact_type_id
+                        })
+                    })
+                    setContactTypeList(contactTypeData)
+                    setContactTypeDropdownList(data);
+                } else if (el?.key == 'locationGroup') {
+                    locationGroupData = el?.data?.location_groups;
+                    let data = [];
+                    locationGroupData.map(e => {
+                        data?.push({
+                            label: e?.location_group_name,
+                            value: e?.location_group_id
+                        })
+                    })
+                    setLocationGroupList(locationGroupData);
+                    setLocationGroupDropdownList(data);
+                } else if (el?.key == 'contactGroup') {
                     contactGroupData = el?.data;
-                    contactGroupData = contactGroupData?.map(el => ({
+                    setContactSubGroupList(contactGroupData)
+                    setContactSubGroupDropdownList([]);
+                } else {
+                    contactData = el?.data?.contacts;
+                    setTotalPage(el?.data?.pages);
+                    contactData = contactData?.map(el => ({
                         ...el,
-                        contact_type_name: contactTypeData?.filter(e => e?.contact_type_id == el?.contact_type_id)[0]?.contact_type_name
+                        location_group: locationGroupList?.filter(e => e?.location_group_id == el?.location_group_id)[0]?.location_group_name,
+                        contact_type: contactTypeData?.filter(o => o.contact_type_id == contactGroupData?.filter(e => e?.contact_group_id == el?.contact_group_id)[0]?.contact_type_id)[0]?.contact_type_name,
+                        contact_group_name: contactGroupData?.filter(e => e?.contact_group_id == el?.contact_group_id)[0]?.contact_group_name
                     }))
-                    setContactGroup(contactGroupData);
+                    setContacts(contactData);
                 }
                 setLoading(false);
             })
         })
     }
+
+    const optionGroup = [
+        { label: "Mustard", value: "Mustard" },
+        { label: "Ketchup", value: "Ketchup" },
+        { label: "Relish", value: "Relish" },
+    ]
 
     const createContactGroup = async () => {
         delete contactSubGroup.contact_group_id;
@@ -148,8 +223,9 @@ const ContactLists = () => {
 
     const pageOptions = {
         sizePerPage: 10,
-        totalSize: contactGroup?.length, // replace later with size(contactGroup),
+        totalSize: 20, // replace later with size(contactGroup),
         custom: true,
+        onPageChange: (e) => console.log(e)
     };
 
     const handleUserClick = (arg) => {
@@ -199,31 +275,44 @@ const ContactLists = () => {
                                 <Col sm={4} md={4} lg={4}>
                                     <FormGroup>
                                         <label className="form-label">Location Group</label>
-                                        <select defaultValue={0} className="form-select" placeholder='Select One'>
-
-                                            <option value={0}>Select</option>
-                                            <option value={0} key={0}>One</option>
-                                        </select>
+                                        <Select
+                                            className="select2"
+                                            placeholder="Select Location Group"
+                                            options={locationGroupDropdownList}
+                                            classNamePrefix="select2 select2-selection"
+                                        />
                                     </FormGroup>
                                 </Col>
                                 <Col sm={4} md={4} lg={4}>
                                     <FormGroup>
                                         <label className="form-label">Contact Type</label>
-                                        <select defaultValue={0} className="form-select" placeholder='Select One'>
-
-                                            <option value={0}>Select</option>
-                                            <option value={0} key={0}>One</option>
-                                        </select>
+                                        <Select
+                                            className="select2"
+                                            placeholder="Select Contact Type"
+                                            options={contactTypeDropdownList}
+                                            classNamePrefix="select2 select2-selection"
+                                            onChange={val => {
+                                                setContactSubGroupDropdownList([]);
+                                                let data = contactSubGroupList?.filter(el => el.contact_type_id == val.value);
+                                                let temp_data = [];
+                                                data?.map(el => temp_data.push({
+                                                    label: el?.contact_group_name,
+                                                    value: el?.contact_group_id
+                                                }))
+                                                setContactSubGroupDropdownList(temp_data);
+                                            }}
+                                        />
                                     </FormGroup>
                                 </Col>
                                 <Col sm={4} md={4} lg={4}>
                                     <FormGroup>
-                                        <label className="form-label">Contact Sub Type</label>
-                                        <select defaultValue={0} className="form-select" placeholder='Select One'>
-
-                                            <option value={0}>Select</option>
-                                            <option value={0} key={0}>One</option>
-                                        </select>
+                                        <label className="form-label">Contact Sub Group</label>
+                                        <Select
+                                            className="select2"
+                                            placeholder="Select Contact Group"
+                                            options={contactSubGroupDropdownList}
+                                            classNamePrefix="select2 select2-selection"
+                                        />
                                     </FormGroup>
                                 </Col>
                             </Row>
@@ -248,16 +337,16 @@ const ContactLists = () => {
                                     <Col sm={4} md={3} lg={3}>
                                         <Row>
                                             <Col xs={3} sm={3} md={3} lg={3}>
-                                                <i className="bx bx bxs-printer  align-middle me-2" style={{fontSize:30}}></i>
+                                                <i className="bx bx bxs-printer  align-middle me-2" style={{ fontSize: 30 }}></i>
                                             </Col>
                                             <Col xs={3} sm={3} md={3} lg={3}>
-                                                <i className="bx bx bx-download align-middle me-2" style={{fontSize:30}}></i>
+                                                <i className="bx bx bx-download align-middle me-2" style={{ fontSize: 30 }}></i>
                                             </Col>
                                             <Col xs={3} sm={3} md={3} lg={3}>
-                                                <i className="bx bx bx-upload align-middle me-2" style={{fontSize:30}}></i>
+                                                <i className="bx bx bx-upload align-middle me-2" style={{ fontSize: 30 }}></i>
                                             </Col>
                                             <Col xs={3} sm={3} md={3} lg={3}>
-                                                <i className="bx bx bxs-file-plus align-middle me-2" style={{fontSize:30}}></i>
+                                                <i className="bx bx bxs-file-plus align-middle me-2" style={{ fontSize: 30 }}></i>
                                             </Col>
                                         </Row>
                                     </Col>
@@ -288,15 +377,15 @@ const ContactLists = () => {
                             !loading && (
                                 <PaginationProvider
                                     pagination={paginationFactory(pageOptions)}
-                                    keyField="contact_group_id"
+                                    keyField="contact_id"
                                     columns={columnList}
-                                    data={contactGroup}
+                                    data={contacts}
                                 >
                                     {({ paginationProps, paginationTableProps }) => (
                                         <ToolkitProvider
-                                            keyField="contact_group_id"
+                                            keyField="contact_id"
                                             columns={columnList}
-                                            data={contactGroup}
+                                            data={contacts}
                                             search
                                         >
                                             {toolkitprops => (
@@ -314,60 +403,10 @@ const ContactLists = () => {
                                                                     }
                                                                     bordered={false}
                                                                     striped={false}
+                                                                    remote
                                                                     responsive
                                                                     ref={node}
                                                                 />
-
-                                                                <Modal
-                                                                    isOpen={contactGroupModal}
-                                                                // className={this.props.className}
-                                                                >
-                                                                    <ModalHeader
-                                                                        toggle={toggle}
-                                                                        tag="h4"
-                                                                    >
-                                                                        {!!isEdit ? "Edit Contact Sub Group" : "Add Contact Sub Group"}
-                                                                    </ModalHeader>
-                                                                    <ModalBody>
-                                                                        <FormGroup>
-                                                                            <Label className="form-label">Contact Type</Label>
-                                                                            <select defaultValue={!isEdit ? 0 : contactSubGroup.contact_type_id} className="form-select" placeholder='Select One'
-                                                                                onChange={e => setContactSubGroup(prev => ({ ...prev, contact_type_id: Number(e.target.value) }))}>
-                                                                                {
-                                                                                    !isEdit && (
-                                                                                        <option value={0}>Select</option>
-                                                                                    )
-                                                                                }
-                                                                                {contactTypeList.map(el => (
-                                                                                    !isEdit ? (
-                                                                                        <option value={el?.contact_type_id} key={el?.contact_type_id}>{el?.contact_type_name}</option>
-
-                                                                                    ) : (
-                                                                                        <option value={el?.contact_type_id} key={el?.contact_type_id} selected={el?.contact_type_id == contactSubGroup?.contact_type_id}>{el?.contact_type_name}</option>
-
-                                                                                    )
-                                                                                ))}
-                                                                            </select>
-                                                                        </FormGroup>
-                                                                        <FormGroup>
-                                                                            <Label className="form-label">Contact Sub Group Name</Label>
-                                                                            <input type={'text'} className="form-control" placeholder='Enter sub group name'
-                                                                                value={contactSubGroup.contact_group_name}
-                                                                                onChange={e => setContactSubGroup(prev => ({ ...prev, contact_group_name: e.target.value }))}
-                                                                            />
-                                                                        </FormGroup>
-                                                                        <div style={{ textAlign: 'right' }}>
-                                                                            <button
-                                                                                type="button"
-                                                                                className="btn btn-primary"
-                                                                                onClick={() => !isEdit ? createContactGroup() : updateContactGroup()}
-                                                                            >
-                                                                                {!isEdit ? 'Save' : "Update"}
-                                                                            </button>
-                                                                        </div>
-
-                                                                    </ModalBody>
-                                                                </Modal>
                                                             </div>
                                                         </Col>
                                                     </Row>
